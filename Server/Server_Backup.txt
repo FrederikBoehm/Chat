@@ -1,0 +1,141 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+
+namespace Server
+{
+    class Server
+    {
+        private const int BACKLOG = 5;
+        private const int BUFFERSIZE = 1024;
+        private const int PORT = 8000;
+        private static List<Socket> clientSockets = new List<Socket>();
+        private static Socket servSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private static string message = "";
+        private static List<Thread> threads = new List<Thread>();
+
+        static void Main(string[] args)
+        {
+            CreateServer();
+            AddClient();
+            string message = "";
+
+            while (true)
+            {
+
+                ThreadStart ts = new ThreadStart(AddClient);
+                Thread t = new Thread(ts);
+                t.Start();
+
+                ThreadStart ts2 = new ThreadStart(ReceiveMessage);
+                Thread t2 = new Thread(ts2);
+                t2.Start();
+
+                while (message == Server.message)
+                {
+                    Thread.Sleep(10);
+                }
+
+                try
+                {
+                    t2.Abort();
+                }
+                catch (ThreadAbortException ex)
+                {
+                    Console.WriteLine("Receive Threads closed");
+                }
+
+                SendBack();
+            }
+            
+
+        }
+
+        static void CreateServer()
+        {
+            
+            IPEndPoint ipEo = new IPEndPoint(IPAddress.Any, 8000);
+            servSock.Bind(ipEo);
+            servSock.Listen(BACKLOG);
+            Console.WriteLine("Server erfolgreich erstellt");
+        }
+
+        static void AddClient()
+        {
+            Socket client = servSock.Accept();
+            clientSockets.Add(client);
+            threads.Add(null);
+            Console.WriteLine("Benutzer beigetreten");
+        }
+
+        static void ReceiveMessage()
+        {
+            ParameterizedThreadStart pts = new ParameterizedThreadStart(_ReceiveM);
+            for (int i = 0; i < clientSockets.Count; i++)
+            {
+                threads[i] = new Thread(pts);
+                threads[i].Start(i);
+                Console.WriteLine("Thread {0} gestartet", i);
+            }
+        }
+
+        static void _ReceiveM(object c)
+        {
+            Socket client = clientSockets[(int)c];
+            byte[] rcvBuffer = new byte[BUFFERSIZE];
+            client.Receive(rcvBuffer, 0, rcvBuffer.Length, SocketFlags.None);
+            string temp = ((int)c).ToString() + ":";
+            message = temp + Encoding.ASCII.GetString(rcvBuffer);
+        }
+
+        static void CloseThreads()
+        {
+            for(int i=0; i<threads.Count; i++)
+            {
+                try
+                {
+                    threads[i].Abort();
+                }
+                catch(ThreadAbortException ex)
+                {
+                    Console.WriteLine("Thread {0} beendet", i);
+                }
+                Console.WriteLine("Thread {0} beendet", i);
+            }
+        }
+
+        static void SendBack()
+        {
+            int doppelpunkt = 0;
+            for(int i=0; i<message.Length; i++)
+            {
+                if(message[i] == ':')
+                {
+                    doppelpunkt = i;
+                    break;
+                }
+            }
+            string from = message.Substring(0, doppelpunkt);
+            int von = Convert.ToInt32(from);
+
+            byte[] sendBuf = new byte[BUFFERSIZE];
+            sendBuf = Encoding.ASCII.GetBytes(message.Substring(doppelpunkt + 1));
+
+            for(int i=0; i<clientSockets.Count; i++)
+            {
+                if(i != von)
+                {
+                    clientSockets[i].Send(sendBuf, 0, sendBuf.Length, SocketFlags.None);
+                }
+            }
+
+            message = "";
+        }
+    }
+}

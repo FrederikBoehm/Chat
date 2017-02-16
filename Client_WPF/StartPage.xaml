@@ -1,0 +1,18 @@
+﻿<Page x:Class="Client_WPF.StartPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Client_WPF"
+      mc:Ignorable="d" 
+      d:DesignHeight="380" d:DesignWidth="580"
+      Title="StartPage">
+
+    <Grid>
+        <TextBlock x:Name="Starttext" HorizontalAlignment="Left" Margin="194,111,0,0" TextWrapping="Wrap" Text="Bitte geb deinen Namen ein:" VerticalAlignment="Top" FontSize="18"/>
+        <TextBox x:Name="Name" HorizontalAlignment="Left" Height="23" Margin="248,140,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120" KeyDown="Name_KeyDown" FontSize="18"/>
+        <Button x:Name="Connect" Content="Mit Server verbinden" HorizontalAlignment="Left" Margin="217,168,0,0" VerticalAlignment="Top" Width="178" Click="Connect_Click" FontSize="18"/>
+
+
+    </Grid>
+</Page>
